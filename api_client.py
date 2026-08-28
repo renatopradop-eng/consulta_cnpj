@@ -51,8 +51,13 @@ def build_payload(filtros: dict) -> dict:
         if raw:
             payload[payload_key or field] = [v.strip() for v in raw.split(",") if v.strip()]
 
-    add_list("uf")
-    add_list("municipio")
+    def add_multi(field):
+        valores = [v for v in (filtros.get(field) or []) if v]
+        if valores:
+            payload[field] = valores
+
+    add_multi("uf")
+    add_multi("municipio")
     add_list("bairro")
     add_list("cep")
     add_list("ddd")
@@ -60,9 +65,7 @@ def build_payload(filtros: dict) -> dict:
     add_list("codigo_atividade_secundaria")
     add_list("codigo_natureza_juridica")
 
-    situacao_cadastral = [v for v in (filtros.get("situacao_cadastral") or []) if v]
-    if situacao_cadastral:
-        payload["situacao_cadastral"] = situacao_cadastral
+    add_multi("situacao_cadastral")
 
     if filtros.get("incluir_atividade_secundaria"):
         payload["incluir_atividade_secundaria"] = True

@@ -22,13 +22,28 @@ Acesse http://127.0.0.1:5000 no navegador.
 
 ## Como usar
 
-1. Preencha os filtros desejados (texto, UF, município, CNAE, situação
-   cadastral, capital social, data de abertura etc.) e clique em **Buscar**.
-2. Os resultados aparecem em tabela. Use **Carregar mais resultados** para
-   trazer a próxima página e acumular tudo antes de exportar.
+1. Preencha os filtros desejados e clique em **Buscar**.
+   - **UF** e **Município**: clique no campo para abrir uma lista com
+     checkboxes. O Município só habilita depois de marcar ao menos uma UF, e
+     mostra só os municípios das UFs selecionadas (buscados dinamicamente na
+     API pública do IBGE). Ambos têm um campo de filtro por texto no topo da
+     lista para achar mais rápido.
+   - **Limpar Dados** apaga o que foi digitado/marcado no formulário, sem
+     descartar resultados já carregados.
+2. Os resultados aparecem em tabela paginada. Use o seletor **Mostrar**
+   (10/20/50/100/Exibir tudo) e os botões **Anterior/Próxima** para navegar.
+   Use **Carregar mais resultados** para buscar a próxima página na API e
+   acumular mais registros antes de exportar.
 3. Clique em **Exportar para XLS** para baixar todos os resultados
-   carregados até o momento em uma planilha `.xlsx`.
+   carregados até o momento (não só a página exibida) em uma planilha `.xlsx`.
 4. **Limpar resultados** descarta a busca atual da sessão.
+
+### Sobre a lista de municípios
+
+O endpoint `/api/municipios` do backend consulta a API pública do IBGE
+(`servicodados.ibge.gov.br`) sob demanda e mantém um cache em memória por UF
+durante a execução do servidor — não precisa de chave nem configuração
+extra, mas exige que a máquina que roda o Flask tenha acesso à internet.
 
 ## Se a API mudar nomes de campos
 
@@ -54,6 +69,7 @@ de fazer buscas grandes (cada consulta consome créditos da sua conta).
 - `utils.py` — achatamento de JSON e geração do XLSX
 - `templates/index.html` — formulário e tabela de resultados
 - `static/style.css` — estilos
+- `static/app.js` — dropdowns de UF/Município com checkbox e carregamento dinâmico de municípios
 
 ## Observações
 

@@ -42,12 +42,46 @@
 
     <fieldset>
       <legend>Localização</legend>
-      <label>UF (separe por vírgula: SP,RJ)
-        <input type="text" name="uf" value="{{ filtros.uf or '' }}">
-      </label>
-      <label>Município (separe por vírgula)
-        <input type="text" name="municipio" value="{{ filtros.municipio or '' }}">
-      </label>
+
+      <div class="campo-localizacao">
+        <span class="rotulo-grupo">UF</span>
+        <div class="multi-select" id="ms-uf" data-campo="uf">
+          <button type="button" class="ms-toggle">
+            <span class="ms-summary">Selecione UF(s)</span><span class="ms-caret">▾</span>
+          </button>
+          <div class="ms-panel" hidden>
+            <input type="text" class="ms-filtro" placeholder="Filtrar UF...">
+            <div class="ms-lista">
+              {% for sigla, nome in ufs %}
+                <label class="ms-item">
+                  <input type="checkbox" name="uf" value="{{ sigla }}" {% if sigla in filtros.get('uf', []) %}checked{% endif %}>
+                  {{ sigla }} — {{ nome }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="campo-localizacao">
+        <span class="rotulo-grupo">Município</span>
+        <div class="multi-select" id="ms-municipio" data-campo="municipio">
+          <button type="button" class="ms-toggle" disabled>
+            <span class="ms-summary">Selecione UF(s) primeiro</span><span class="ms-caret">▾</span>
+          </button>
+          <div class="ms-panel" hidden>
+            <input type="text" class="ms-filtro" placeholder="Filtrar município...">
+            <div class="ms-lista">
+              {% for m in filtros.get('municipio', []) %}
+                <label class="ms-item">
+                  <input type="checkbox" name="municipio" value="{{ m }}" checked> {{ m }}
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <label>Bairro (separe por vírgula)
         <input type="text" name="bairro" value="{{ filtros.bairro or '' }}">
       </label>
@@ -118,6 +152,7 @@
 
     <div class="acoes">
       <button type="submit">Buscar</button>
+      <a class="botao secundario" href="{{ url_for('limpar_campos') }}">Limpar Dados</a>
     </div>
   </form>
 
@@ -133,6 +168,31 @@
         </div>
       </div>
 
+      <div class="paginacao-controles">
+        <form method="get" action="{{ url_for('index') }}" class="seletor-tamanho">
+          <label>Mostrar:
+            <select name="tamanho" onchange="this.form.submit()">
+              <option value="10" {% if estado.tamanho == '10' %}selected{% endif %}>10</option>
+              <option value="20" {% if estado.tamanho == '20' %}selected{% endif %}>20</option>
+              <option value="50" {% if estado.tamanho == '50' %}selected{% endif %}>50</option>
+              <option value="100" {% if estado.tamanho == '100' %}selected{% endif %}>100</option>
+              <option value="todos" {% if estado.tamanho == 'todos' %}selected{% endif %}>Exibir tudo</option>
+            </select>
+          </label>
+          <input type="hidden" name="pagina" value="1">
+        </form>
+
+        {% if estado.total_paginas > 1 %}
+          <nav class="paginacao" aria-label="Navegação de páginas">
+            <a class="botao secundario {% if estado.pagina_atual <= 1 %}desabilitado{% endif %}"
+               href="{{ url_for('index') }}?pagina={{ estado.pagina_atual - 1 }}&tamanho={{ estado.tamanho }}">« Anterior</a>
+            <span class="paginacao-info">Página {{ estado.pagina_atual }} de {{ estado.total_paginas }}</span>
+            <a class="botao secundario {% if estado.pagina_atual >= estado.total_paginas %}desabilitado{% endif %}"
+               href="{{ url_for('index') }}?pagina={{ estado.pagina_atual + 1 }}&tamanho={{ estado.tamanho }}">Próxima »</a>
+          </nav>
+        {% endif %}
+      </div>
+
       <div class="tabela-wrap">
         <table>
           <thead>
@@ -141,7 +201,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for linha in estado.linhas %}
+            {% for linha in estado.linhas_pagina %}
               <tr>
                 {% for col in estado.colunas %}
                   <td>{{ linha.get(col, '') }}</td>
@@ -161,5 +221,6 @@
     </section>
   {% endif %}
 
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>
