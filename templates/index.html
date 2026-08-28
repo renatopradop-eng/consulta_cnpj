@@ -7,15 +7,21 @@
 </head>
 <body>
   {% macro nav_paginacao(estado) %}
-    {% if estado.total_paginas > 1 %}
-      <nav class="paginacao" aria-label="Navegação de páginas">
-        <a class="botao secundario {% if estado.pagina_atual <= 1 %}desabilitado{% endif %}"
-           href="{{ url_for('index') }}?pagina={{ estado.pagina_atual - 1 }}&tamanho={{ estado.tamanho }}">« Anterior</a>
-        <span class="paginacao-info">Página {{ estado.pagina_atual }} de {{ estado.total_paginas }}</span>
-        <a class="botao secundario {% if estado.pagina_atual >= estado.total_paginas %}desabilitado{% endif %}"
-           href="{{ url_for('index') }}?pagina={{ estado.pagina_atual + 1 }}&tamanho={{ estado.tamanho }}">Próxima »</a>
-      </nav>
-    {% endif %}
+    <nav class="paginacao" aria-label="Navegação de páginas">
+      {% if estado.pagina_atual > 1 %}
+        <a class="botao secundario" href="{{ url_for('index') }}?pagina={{ estado.pagina_atual - 1 }}&tamanho={{ estado.tamanho }}">« Anterior</a>
+      {% else %}
+        <span class="botao secundario desabilitado">« Anterior</span>
+      {% endif %}
+
+      <span class="paginacao-info">Página {{ estado.pagina_atual }} de {{ estado.total_paginas }}</span>
+
+      {% if estado.pagina_atual < estado.total_paginas %}
+        <a class="botao secundario" href="{{ url_for('index') }}?pagina={{ estado.pagina_atual + 1 }}&tamanho={{ estado.tamanho }}">Próxima »</a>
+      {% else %}
+        <span class="botao secundario desabilitado">Próxima »</span>
+      {% endif %}
+    </nav>
   {% endmacro %}
 
   <header>
