@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <title>Consulta CNPJ — Casa dos Dados</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Consulta de CNPJ / Geração de Leads</h1>
+    <p class="subtitulo">Pesquisa via API da Casa dos Dados</p>
+  </header>
+
+  {% if erro %}
+    <div class="alerta erro">{{ erro }}</div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('buscar') }}" class="filtros">
+    <input type="hidden" name="acao" value="buscar">
+
+    <fieldset>
+      <legend>Busca textual</legend>
+      <label>Texto (razão social, fantasia ou sócio)
+        <input type="text" name="texto" value="{{ filtros.texto or '' }}">
+      </label>
+      <div class="checkboxes-linha">
+        <label><input type="checkbox" name="campos_busca" value="razao_social" {% if 'razao_social' in filtros.get('campos_busca', []) %}checked{% endif %}> Razão social</label>
+        <label><input type="checkbox" name="campos_busca" value="nome_fantasia" {% if 'nome_fantasia' in filtros.get('campos_busca', []) %}checked{% endif %}> Nome fantasia</label>
+        <label><input type="checkbox" name="campos_busca" value="nome_socio" {% if 'nome_socio' in filtros.get('campos_busca', []) %}checked{% endif %}> Nome do sócio</label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Identificação</legend>
+      <label>CNPJ específico
+        <input type="text" name="cnpj" value="{{ filtros.cnpj or '' }}" placeholder="00.000.000/0000-00">
+      </label>
+      <label>Raiz do CNPJ (8 primeiros dígitos)
+        <input type="text" name="cnpj_raiz" value="{{ filtros.cnpj_raiz or '' }}">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Localização</legend>
+      <label>UF (separe por vírgula: SP,RJ)
+        <input type="text" name="uf" value="{{ filtros.uf or '' }}">
+      </label>
+      <label>Município (separe por vírgula)
+        <input type="text" name="municipio" value="{{ filtros.municipio or '' }}">
+      </label>
+      <label>Bairro (separe por vírgula)
+        <input type="text" name="bairro" value="{{ filtros.bairro or '' }}">
+      </label>
+      <label>CEP (separe por vírgula)
+        <input type="text" name="cep" value="{{ filtros.cep or '' }}">
+      </label>
+      <label>DDD (separe por vírgula)
+        <input type="text" name="ddd" value="{{ filtros.ddd or '' }}">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Atividade e natureza</legend>
+      <label>CNAE principal (códigos separados por vírgula)
+        <input type="text" name="codigo_atividade_principal" value="{{ filtros.codigo_atividade_principal or '' }}">
+      </label>
+      <label>CNAE secundário (códigos separados por vírgula)
+        <input type="text" name="codigo_atividade_secundaria" value="{{ filtros.codigo_atividade_secundaria or '' }}">
+      </label>
+      <label class="linha-checkbox"><input type="checkbox" name="incluir_atividade_secundaria" {% if filtros.incluir_atividade_secundaria %}checked{% endif %}> Incluir atividade secundária na busca</label>
+      <label>Natureza jurídica (códigos separados por vírgula)
+        <input type="text" name="codigo_natureza_juridica" value="{{ filtros.codigo_natureza_juridica or '' }}">
+      </label>
+      <label>Situação cadastral (ex: ATIVA)
+        <input type="text" name="situacao_cadastral" value="{{ filtros.situacao_cadastral or '' }}">
+      </label>
+      <label>Matriz ou filial
+        <select name="matriz_filial">
+          <option value="" {% if not filtros.matriz_filial %}selected{% endif %}>Ambos</option>
+          <option value="MATRIZ" {% if filtros.matriz_filial == 'MATRIZ' %}selected{% endif %}>Matriz</option>
+          <option value="FILIAL" {% if filtros.matriz_filial == 'FILIAL' %}selected{% endif %}>Filial</option>
+        </select>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Capital social e data de abertura</legend>
+      <label>Capital social de
+        <input type="number" name="capital_social_de" value="{{ filtros.capital_social_de or '' }}">
+      </label>
+      <label>Capital social até
+        <input type="number" name="capital_social_ate" value="{{ filtros.capital_social_ate or '' }}">
+      </label>
+      <label>Data de abertura de
+        <input type="date" name="data_abertura_de" value="{{ filtros.data_abertura_de or '' }}">
+      </label>
+      <label>Data de abertura até
+        <input type="date" name="data_abertura_ate" value="{{ filtros.data_abertura_ate or '' }}">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Filtros extras</legend>
+      <div class="checkboxes-linha">
+        <label><input type="checkbox" name="somente_mei" {% if filtros.somente_mei %}checked{% endif %}> Somente MEI</label>
+        <label><input type="checkbox" name="excluir_mei" {% if filtros.excluir_mei %}checked{% endif %}> Excluir MEI</label>
+        <label><input type="checkbox" name="com_email" {% if filtros.com_email %}checked{% endif %}> Somente com e-mail</label>
+        <label><input type="checkbox" name="com_telefone" {% if filtros.com_telefone %}checked{% endif %}> Somente com telefone</label>
+      </div>
+    </fieldset>
+
+    <div class="acoes">
+      <button type="submit">Buscar</button>
+    </div>
+  </form>
+
+  {% if estado and estado.empresas %}
+    <section class="resultados">
+      <div class="resultados-cabecalho">
+        <h2>Resultados ({{ estado.empresas|length }} carregado(s){% if estado.total %} de ~{{ estado.total }}{% endif %})</h2>
+        <div class="acoes-resultado">
+          <a class="botao" href="{{ url_for('exportar') }}">Exportar para XLS</a>
+          <form method="post" action="{{ url_for('limpar') }}" style="display:inline">
+            <button type="submit" class="botao secundario">Limpar resultados</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="tabela-wrap">
+        <table>
+          <thead>
+            <tr>
+              {% for col in estado.colunas %}<th>{{ col }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for linha in estado.linhas %}
+              <tr>
+                {% for col in estado.colunas %}
+                  <td>{{ linha.get(col, '') }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if not estado.ultima_pagina_vazia %}
+        <form method="post" action="{{ url_for('buscar') }}" class="acoes">
+          <input type="hidden" name="acao" value="carregar_mais">
+          <button type="submit">Carregar mais resultados</button>
+        </form>
+      {% endif %}
+    </section>
+  {% endif %}
+
+</body>
+</html>
