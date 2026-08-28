@@ -6,6 +6,18 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  {% macro nav_paginacao(estado) %}
+    {% if estado.total_paginas > 1 %}
+      <nav class="paginacao" aria-label="Navegação de páginas">
+        <a class="botao secundario {% if estado.pagina_atual <= 1 %}desabilitado{% endif %}"
+           href="{{ url_for('index') }}?pagina={{ estado.pagina_atual - 1 }}&tamanho={{ estado.tamanho }}">« Anterior</a>
+        <span class="paginacao-info">Página {{ estado.pagina_atual }} de {{ estado.total_paginas }}</span>
+        <a class="botao secundario {% if estado.pagina_atual >= estado.total_paginas %}desabilitado{% endif %}"
+           href="{{ url_for('index') }}?pagina={{ estado.pagina_atual + 1 }}&tamanho={{ estado.tamanho }}">Próxima »</a>
+      </nav>
+    {% endif %}
+  {% endmacro %}
+
   <header>
     <h1>Consulta de CNPJ / Geração de Leads</h1>
     <p class="subtitulo">Pesquisa via API da Casa dos Dados</p>
@@ -182,15 +194,7 @@
           <input type="hidden" name="pagina" value="1">
         </form>
 
-        {% if estado.total_paginas > 1 %}
-          <nav class="paginacao" aria-label="Navegação de páginas">
-            <a class="botao secundario {% if estado.pagina_atual <= 1 %}desabilitado{% endif %}"
-               href="{{ url_for('index') }}?pagina={{ estado.pagina_atual - 1 }}&tamanho={{ estado.tamanho }}">« Anterior</a>
-            <span class="paginacao-info">Página {{ estado.pagina_atual }} de {{ estado.total_paginas }}</span>
-            <a class="botao secundario {% if estado.pagina_atual >= estado.total_paginas %}desabilitado{% endif %}"
-               href="{{ url_for('index') }}?pagina={{ estado.pagina_atual + 1 }}&tamanho={{ estado.tamanho }}">Próxima »</a>
-          </nav>
-        {% endif %}
+        {{ nav_paginacao(estado) }}
       </div>
 
       <div class="tabela-wrap">
@@ -210,6 +214,10 @@
             {% endfor %}
           </tbody>
         </table>
+      </div>
+
+      <div class="paginacao-controles paginacao-rodape">
+        {{ nav_paginacao(estado) }}
       </div>
 
       {% if not estado.ultima_pagina_vazia %}
