@@ -34,8 +34,6 @@
   {% endif %}
 
   <form method="post" action="{{ url_for('buscar') }}" class="filtros">
-    <input type="hidden" name="acao" value="buscar">
-
     <fieldset>
       <legend>Busca textual</legend>
       <label>Texto (razão social, fantasia ou sócio)
@@ -225,13 +223,6 @@
       <div class="paginacao-controles paginacao-rodape">
         {{ nav_paginacao(estado) }}
       </div>
-
-      {% if not estado.ultima_pagina_vazia %}
-        <form method="post" action="{{ url_for('buscar') }}" class="acoes">
-          <input type="hidden" name="acao" value="carregar_mais">
-          <button type="submit">Carregar mais resultados</button>
-        </form>
-      {% endif %}
     </section>
   {% endif %}
 

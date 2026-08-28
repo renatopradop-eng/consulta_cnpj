@@ -126,34 +126,24 @@ def limpar_campos():
 def buscar():
     sid = _session_id()
     filtros = _read_filtros(request.form)
-    acao = request.form.get("acao", "buscar")
 
     estado_anterior = RESULTS_BY_SESSION.get(sid)
-    pagina_api = 1
-    empresas_acumuladas = []
     tamanho_anterior = estado_anterior.get("tamanho") if estado_anterior else None
-    if acao == "carregar_mais" and estado_anterior:
-        filtros = estado_anterior["filtros"]
-        pagina_api = estado_anterior["pagina"] + 1
-        empresas_acumuladas = estado_anterior["empresas"]
 
     try:
-        empresas, total, _raw = api_client.search(filtros, pagina=pagina_api)
+        empresas, total, _raw = api_client.search(filtros, pagina=1)
     except api_client.CasaDosDadosError as exc:
         estado = _paginar_estado(estado_anterior)
         return _render(filtros, estado, str(exc))
 
-    todas_empresas = empresas_acumuladas + empresas
-    colunas, linhas = flatten_records(todas_empresas)
+    colunas, linhas = flatten_records(empresas)
 
     estado = {
         "filtros": filtros,
-        "pagina": pagina_api,
-        "empresas": todas_empresas,
+        "empresas": empresas,
         "linhas": linhas,
         "total": total,
         "colunas": colunas,
-        "ultima_pagina_vazia": len(empresas) == 0,
         "tamanho": tamanho_anterior or PAGE_SIZE_PADRAO,
     }
     estado = _paginar_estado(estado, pagina_raw="1")

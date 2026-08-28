@@ -31,11 +31,10 @@ Acesse http://127.0.0.1:5000 no navegador.
    - **Limpar Dados** apaga o que foi digitado/marcado no formulário, sem
      descartar resultados já carregados.
 2. Os resultados aparecem em tabela paginada. Use o seletor **Mostrar**
-   (10/20/50/100/Exibir tudo) e os botões **Anterior/Próxima** para navegar.
-   Use **Carregar mais resultados** para buscar a próxima página na API e
-   acumular mais registros antes de exportar.
+   (10/20/50/100/Exibir tudo) e os botões **Anterior/Próxima** para navegar
+   entre os registros já retornados pela busca.
 3. Clique em **Exportar para XLS** para baixar todos os resultados
-   carregados até o momento (não só a página exibida) em uma planilha `.xlsx`.
+   carregados (não só a página exibida) em uma planilha `.xlsx`.
 4. **Limpar resultados** descarta a busca atual da sessão.
 
 ### Sobre a lista de municípios
