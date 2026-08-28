@@ -229,15 +229,25 @@ def exportar():
 
 @app.route("/debug/bruto", methods=["GET"])
 def debug_bruto():
-    """Mostra o JSON bruto da 1ª empresa carregada, para conferir os nomes
-    reais de campo que a API está devolvendo (útil ao ajustar utils.py)."""
+    """Mostra o JSON bruto da 1ª empresa carregada e os detalhes da última
+    chamada feita à API, para conferir se os parâmetros certos foram
+    enviados e quais nomes de campo a API está devolvendo."""
     sid = _session_id()
     estado = RESULTS_BY_SESSION.get(sid)
     if not estado or not estado.get("empresas"):
         return Response("Nenhum resultado carregado. Faça uma busca primeiro.", mimetype="text/plain")
 
-    texto = json.dumps(estado["empresas"][0], indent=2, ensure_ascii=False, default=str)
-    return Response(texto, mimetype="text/plain; charset=utf-8")
+    partes = [
+        "URL da última chamada à API:",
+        api_client.ULTIMA_REQUISICAO.get("url", "(indisponível)"),
+        "",
+        "Payload (corpo) enviado:",
+        json.dumps(api_client.ULTIMA_REQUISICAO.get("payload_enviado", {}), indent=2, ensure_ascii=False, default=str),
+        "",
+        "JSON do primeiro resultado carregado:",
+        json.dumps(estado["empresas"][0], indent=2, ensure_ascii=False, default=str),
+    ]
+    return Response("\n".join(partes), mimetype="text/plain; charset=utf-8")
 
 
 @app.route("/limpar", methods=["POST"])

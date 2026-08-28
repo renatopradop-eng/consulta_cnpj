@@ -19,6 +19,9 @@ API_KEY = os.environ.get("CASADOSDADOS_API_KEY", "")
 # máximo de cada vez reduz o número de chamadas necessárias para paginar.
 LIMITE_POR_CHAMADA = 1000
 
+# Guarda a última requisição feita (para depuração via /debug/bruto).
+ULTIMA_REQUISICAO = {}
+
 # Chaves onde a lista de empresas costuma vir dentro da resposta da API.
 RESULT_LIST_KEYS = ["resultados", "resultado", "data", "empresas", "cnpjs", "results", "items"]
 COUNT_KEYS = ["count", "total", "quantidade", "total_registros"]
@@ -177,6 +180,10 @@ def search(filtros: dict, pagina: int = 1, timeout: int = 30):
     filtros = dict(filtros)
     filtros["pagina"] = pagina
     payload = build_payload(filtros)
+    # Envia tipo_resultado tanto na query string quanto no corpo: a documentação
+    # lista como "Parâmetro de Consulta", mas a resposta continuou vindo no modo
+    # simples só com query string, então cobrimos as duas formas possíveis.
+    payload["tipo_resultado"] = "completo"
 
     try:
         resp = requests.post(
@@ -188,6 +195,9 @@ def search(filtros: dict, pagina: int = 1, timeout: int = 30):
         )
     except requests.RequestException as exc:
         raise CasaDosDadosError(f"Falha de conexão com a API: {exc}") from exc
+
+    ULTIMA_REQUISICAO["url"] = resp.url
+    ULTIMA_REQUISICAO["payload_enviado"] = payload
 
     try:
         data = resp.json()
