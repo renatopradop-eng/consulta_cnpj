@@ -11,7 +11,7 @@ import requests
 
 API_URL = os.environ.get(
     "CASADOSDADOS_API_URL",
-    "https://api.casadosdados.com.br/v5/public/cnpj/pesquisa",
+    "https://api.casadosdados.com.br/v5/cnpj/pesquisa",
 )
 API_KEY = os.environ.get("CASADOSDADOS_API_KEY", "")
 

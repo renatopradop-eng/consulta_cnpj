@@ -63,16 +63,27 @@ O endpoint `/api/municipios` do backend consulta a API pública do IBGE
 durante a execução do servidor — não precisa de chave nem configuração
 extra, mas exige que a máquina que roda o Flask tenha acesso à internet.
 
-## Sobre `tipo_resultado=completo`
+## Sobre o endpoint e `tipo_resultado=completo`
 
-Por padrão a API da Casa dos Dados responde no modo "simples" (só CNPJ,
-razão social, nome fantasia e situação cadastral) a menos que a chamada
-peça explicitamente o modo completo. O app já envia
-`?tipo_resultado=completo` em toda busca (em `api_client.py`, função
-`search()`) para trazer também capital social, endereço, quadro
-societário, e-mail, telefone e CNAE. Se algum desses campos ainda não
-aparecer nos seus resultados, confirme na documentação atual se o nome ou
-a forma de pedir o modo completo mudou.
+O endpoint padrão é `https://api.casadosdados.com.br/v5/cnpj/pesquisa`
+(pesquisa avançada) — **sem** `/public/` no caminho. O endpoint
+`/v5/public/cnpj/pesquisa` parece ser uma versão simplificada que sempre
+responde no modo "simples" (só CNPJ, razão social, nome fantasia e
+situação cadastral), ignorando o parâmetro `tipo_resultado`.
+
+O app envia `tipo_resultado=completo` tanto na query string quanto no
+corpo da requisição (em `api_client.py`, função `search()`) para trazer
+também capital social, endereço, quadro societário, e-mail, telefone e
+CNAE. **Se você já tem um arquivo `.env` com `CASADOSDADOS_API_URL`
+apontando para a URL antiga (com `/public/`), atualize-o** — variável de
+ambiente sempre tem prioridade sobre o valor padrão do código.
+
+Se mesmo assim os campos completos não aparecerem, use o link **"Ver
+dados brutos"** na tela de resultados (rota `/debug/bruto`) para conferir
+a URL e o payload realmente enviados, e a resposta crua da API — nesse
+ponto, a causa mais provável passa a ser uma limitação do plano da sua
+conta na Casa dos Dados (mode completo costuma ser um recurso pago),
+não mais um problema de código.
 
 ## Se a API mudar nomes de campos
 
