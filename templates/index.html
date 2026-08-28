@@ -184,6 +184,14 @@
         </div>
       </div>
 
+      {% if estado.limite_atingido %}
+        <div class="alerta erro">
+          Limite de {{ estado.empresas|length }} registros carregados automaticamente atingido
+          (de ~{{ estado.total }} encontrados). Refine os filtros para reduzir o total ou
+          exporte o que já foi carregado.
+        </div>
+      {% endif %}
+
       <div class="paginacao-controles">
         <form method="get" action="{{ url_for('index') }}" class="seletor-tamanho">
           <label>Mostrar:

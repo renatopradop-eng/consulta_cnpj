@@ -44,6 +44,10 @@ _municipios_cache = {}
 PAGE_SIZE_OPTIONS = ["10", "20", "50", "100", "todos"]
 PAGE_SIZE_PADRAO = "20"
 
+# Teto de segurança: quantos registros no máximo o app busca automaticamente
+# na API ao navegar pela paginação, para não estourar créditos numa única ação.
+MAX_REGISTROS_CARREGADOS = 1000
+
 
 def _session_id():
     if "sid" not in session:
@@ -64,6 +68,50 @@ def _resolver_tamanho(valor):
     return valor if valor in PAGE_SIZE_OPTIONS else PAGE_SIZE_PADRAO
 
 
+def _linhas_necessarias(tamanho, pagina_exibicao, total_estimado, total_carregado):
+    if tamanho == "todos":
+        alvo = total_estimado if total_estimado is not None else total_carregado
+    else:
+        alvo = pagina_exibicao * int(tamanho)
+    return min(alvo, MAX_REGISTROS_CARREGADOS)
+
+
+def _garantir_dados_carregados(sid, estado, pagina_exibicao_raw, tamanho_raw):
+    """Busca páginas adicionais na API sob demanda até ter carregado o suficiente
+    para satisfazer a página/tamanho de exibição pedidos (respeitando o teto de
+    segurança MAX_REGISTROS_CARREGADOS)."""
+    tamanho = _resolver_tamanho(tamanho_raw if tamanho_raw is not None else estado.get("tamanho", PAGE_SIZE_PADRAO))
+    try:
+        pagina_exibicao = int(pagina_exibicao_raw)
+    except (TypeError, ValueError):
+        pagina_exibicao = 1
+
+    linhas_necessarias = _linhas_necessarias(tamanho, pagina_exibicao, estado.get("total"), len(estado["empresas"]))
+
+    while len(estado["empresas"]) < linhas_necessarias:
+        total_atual = estado.get("total")
+        if total_atual is not None and len(estado["empresas"]) >= total_atual:
+            break
+        proxima_pagina_api = estado.get("ultima_pagina_api", 1) + 1
+        try:
+            novas_empresas, total, _raw = api_client.search(estado["filtros"], pagina=proxima_pagina_api)
+        except api_client.CasaDosDadosError:
+            break
+        if not novas_empresas:
+            break
+        estado["empresas"] = estado["empresas"] + novas_empresas
+        estado["total"] = total
+        estado["ultima_pagina_api"] = proxima_pagina_api
+        estado["colunas"], estado["linhas"] = flatten_records(estado["empresas"])
+
+    estado["limite_atingido"] = (
+        len(estado["empresas"]) >= MAX_REGISTROS_CARREGADOS
+        and (estado.get("total") is None or len(estado["empresas"]) < estado["total"])
+    )
+    RESULTS_BY_SESSION[sid] = estado
+    return estado
+
+
 def _paginar_estado(estado, pagina_raw="1", tamanho_raw=None):
     """Recorta estado['linhas'] para exibição, sem alterar os dados completos (usados na exportação)."""
     if not estado:
@@ -76,14 +124,18 @@ def _paginar_estado(estado, pagina_raw="1", tamanho_raw=None):
         estado.setdefault("tamanho", PAGE_SIZE_PADRAO)
 
     linhas = estado.get("linhas", [])
-    total = len(linhas)
+    total_relatado = estado.get("total")
+    if total_relatado is not None:
+        total_alvo = max(min(total_relatado, MAX_REGISTROS_CARREGADOS), len(linhas))
+    else:
+        total_alvo = len(linhas)
 
     if estado["tamanho"] == "todos":
-        tamanho = max(total, 1)
+        tamanho = max(total_alvo, 1)
     else:
         tamanho = int(estado["tamanho"])
 
-    total_paginas = max((total + tamanho - 1) // tamanho, 1)
+    total_paginas = max((total_alvo + tamanho - 1) // tamanho, 1)
 
     try:
         pagina = int(pagina_raw)
@@ -109,8 +161,11 @@ def index():
     sid = _session_id()
     estado = RESULTS_BY_SESSION.get(sid)
     filtros = estado["filtros"] if estado else {}
-    estado = _paginar_estado(estado, request.args.get("pagina", "1"), request.args.get("tamanho"))
     if estado:
+        pagina_raw = request.args.get("pagina", "1")
+        tamanho_raw = request.args.get("tamanho")
+        estado = _garantir_dados_carregados(sid, estado, pagina_raw, tamanho_raw)
+        estado = _paginar_estado(estado, pagina_raw, tamanho_raw)
         RESULTS_BY_SESSION[sid]["tamanho"] = estado["tamanho"]
     return _render(filtros, estado, None)
 
@@ -145,7 +200,10 @@ def buscar():
         "total": total,
         "colunas": colunas,
         "tamanho": tamanho_anterior or PAGE_SIZE_PADRAO,
+        "ultima_pagina_api": 1,
     }
+    RESULTS_BY_SESSION[sid] = estado
+    estado = _garantir_dados_carregados(sid, estado, "1", None)
     estado = _paginar_estado(estado, pagina_raw="1")
     RESULTS_BY_SESSION[sid] = estado
 

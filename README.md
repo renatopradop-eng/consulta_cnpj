@@ -31,10 +31,23 @@ Acesse http://127.0.0.1:5000 no navegador.
    - **Limpar Dados** apaga o que foi digitado/marcado no formulário, sem
      descartar resultados já carregados.
 2. Os resultados aparecem em tabela paginada. Use o seletor **Mostrar**
-   (10/20/50/100/Exibir tudo) e os botões **Anterior/Próxima** para navegar
-   entre os registros já retornados pela busca.
+   (10/20/50/100/Exibir tudo) e os botões **Anterior/Próxima** para navegar.
+   Ao avançar para uma página que ainda não foi carregada, o sistema busca
+   automaticamente mais registros na API — por isso o número de "carregados"
+   no cabeçalho cresce conforme você navega, até bater com o total
+   encontrado (ou até o teto de segurança abaixo).
 3. Clique em **Exportar para XLS** para baixar todos os resultados
-   carregados (não só a página exibida) em uma planilha `.xlsx`.
+   carregados até o momento (não só a página exibida) em uma planilha `.xlsx`.
+
+### Teto de segurança na paginação automática
+
+Cada chamada à API consome créditos da sua conta. Para não gastar créditos
+sem controle (por exemplo, ao selecionar "Exibir tudo" numa busca com
+milhares de resultados), o app carrega automaticamente no máximo
+`MAX_REGISTROS_CARREGADOS` registros (1000 por padrão, definido no topo de
+`app.py`). Ao atingir esse teto, aparece um aviso na tela pedindo para
+refinar os filtros ou exportar o que já foi carregado. Ajuste essa
+constante se quiser um limite maior ou menor.
 4. **Limpar resultados** descarta a busca atual da sessão.
 
 ### Sobre a lista de municípios
