@@ -124,6 +124,22 @@ legend { font-weight: 600; padding: 0 6px; }
   box-shadow: 0 6px 16px rgba(27, 31, 36, 0.15);
   padding: 8px;
 }
+.ms-acoes-lista {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.ms-link {
+  background: none;
+  border: none;
+  color: var(--cor-primaria);
+  font-size: 0.82rem;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.ms-link:hover { opacity: 0.8; }
+
 .ms-filtro {
   width: 100%;
   padding: 6px 8px;

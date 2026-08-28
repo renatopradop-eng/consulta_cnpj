@@ -30,6 +30,12 @@ Acesse http://127.0.0.1:5000 no navegador.
      lista para achar mais rápido.
    - **Limpar Dados** apaga o que foi digitado/marcado no formulário, sem
      descartar resultados já carregados.
+   - No painel do **Município**, use **Selecionar todos** / **Limpar seleção**
+     para marcar ou desmarcar rapidamente os municípios visíveis (respeita o
+     filtro de texto — filtre por um termo e "Selecionar todos" marca só os
+     que aparecem).
+   - **Capital social de/até** aceitam valores em reais com máscara (ex:
+     digite `150000` e o campo mostra `R$ 1.500,00`).
 2. Os resultados aparecem em tabela paginada. Use o seletor **Mostrar**
    (10/20/50/100/Exibir tudo) e os botões **Anterior/Próxima** para navegar.
    Ao avançar para uma página que ainda não foi carregada, o sistema busca
@@ -68,7 +74,18 @@ Dados usar outro nome no envelope da resposta.
 A exportação para XLSX (`utils.py`) é genérica: ela "achata" automaticamente
 qualquer estrutura JSON aninhada que a API devolver (ex: `endereco.uf`,
 `atividade_principal.descricao`), então novos campos aparecem na planilha
-sem precisar mexer no código.
+sem precisar mexer no código. Duas exceções, ambas em `utils.py`:
+
+- `COLUNAS_EXCLUIDAS` — colunas que nunca aparecem na tabela nem no XLSX
+  (atualmente `CNPJ` e os campos de `situacao_cadastral`).
+- `COLUNAS_PRIORITARIAS` — prefixos de coluna que são trazidos para o
+  início da tabela, nessa ordem (capital social, município, e-mail,
+  telefone, CNAE principal, sócios). A lista de sócios também é
+  simplificada para uma única coluna com os nomes separados por " | ",
+  em vez de colunas fragmentadas por índice.
+
+Ajuste essas duas constantes se os nomes de campo da API mudarem ou se você
+quiser exibir/ocultar outras colunas.
 
 Consulte a documentação oficial e atualizada em
 https://docs.casadosdados.com.br/ para confirmar nomes de parâmetros antes

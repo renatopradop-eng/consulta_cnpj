@@ -87,6 +87,10 @@
           </button>
           <div class="ms-panel" hidden>
             <input type="text" class="ms-filtro" placeholder="Filtrar município...">
+            <div class="ms-acoes-lista">
+              <button type="button" class="ms-link" data-acao="selecionar-todos">Selecionar todos</button>
+              <button type="button" class="ms-link" data-acao="limpar-selecao">Limpar seleção</button>
+            </div>
             <div class="ms-lista">
               {% for m in filtros.get('municipio', []) %}
                 <label class="ms-item">
@@ -143,10 +147,12 @@
     <fieldset>
       <legend>Capital social e data de abertura</legend>
       <label>Capital social de
-        <input type="number" name="capital_social_de" value="{{ filtros.capital_social_de or '' }}">
+        <input type="text" class="input-moeda" inputmode="numeric" placeholder="R$ 0,00" data-hidden="capital_social_de_raw">
+        <input type="hidden" name="capital_social_de" id="capital_social_de_raw" value="{{ filtros.capital_social_de or '' }}">
       </label>
       <label>Capital social até
-        <input type="number" name="capital_social_ate" value="{{ filtros.capital_social_ate or '' }}">
+        <input type="text" class="input-moeda" inputmode="numeric" placeholder="R$ 0,00" data-hidden="capital_social_ate_raw">
+        <input type="hidden" name="capital_social_ate" id="capital_social_ate_raw" value="{{ filtros.capital_social_ate or '' }}">
       </label>
       <label>Data de abertura de
         <input type="date" name="data_abertura_de" value="{{ filtros.data_abertura_de or '' }}">

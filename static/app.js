@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
       desabilitarMunicipio(msMunicipio, 'Selecione UF(s) primeiro');
     }
   }
+
+  document.querySelectorAll('.input-moeda').forEach(setupMoeda);
 });
 
 function ufsMarcadas(msUf) {
@@ -106,10 +108,28 @@ function setupMultiSelect(container) {
     filtro.addEventListener('input', () => aplicarFiltroTexto(container));
   }
 
+  const btnSelecionarTodos = container.querySelector('[data-acao="selecionar-todos"]');
+  const btnLimparSelecao = container.querySelector('[data-acao="limpar-selecao"]');
+  if (btnSelecionarTodos) {
+    btnSelecionarTodos.addEventListener('click', () => marcarItensVisiveis(container, true));
+  }
+  if (btnLimparSelecao) {
+    btnLimparSelecao.addEventListener('click', () => marcarItensVisiveis(container, false));
+  }
+
   container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
     cb.addEventListener('change', () => atualizarResumo(container));
   });
 
+  atualizarResumo(container);
+}
+
+function marcarItensVisiveis(container, marcado) {
+  container.querySelectorAll('.ms-item').forEach((item) => {
+    if (item.style.display === 'none') return;
+    const cb = item.querySelector('input[type="checkbox"]');
+    if (cb) cb.checked = marcado;
+  });
   atualizarResumo(container);
 }
 
@@ -120,6 +140,42 @@ function aplicarFiltroTexto(container) {
   container.querySelectorAll('.ms-item').forEach((item) => {
     const texto = item.textContent.trim().toLowerCase();
     item.style.display = texto.includes(termo) ? '' : 'none';
+  });
+}
+
+function formatarMoeda(digitos) {
+  digitos = (digitos || '').replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+  if (!digitos) return '';
+  while (digitos.length < 3) digitos = '0' + digitos;
+  const centavos = digitos.slice(-2);
+  const inteiros = digitos.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return 'R$ ' + inteiros + ',' + centavos;
+}
+
+function rawFromDigitos(digitos) {
+  digitos = (digitos || '').replace(/\D/g, '');
+  if (!digitos) return '';
+  const centavos = digitos.slice(-2).padStart(2, '0');
+  const inteiros = digitos.slice(0, -2) || '0';
+  return inteiros + '.' + centavos;
+}
+
+function digitosFromRaw(raw) {
+  const numero = parseFloat(raw);
+  if (!raw || isNaN(numero)) return '';
+  return Math.round(numero * 100).toString();
+}
+
+function setupMoeda(input) {
+  const hidden = document.getElementById(input.dataset.hidden);
+  if (!hidden) return;
+
+  input.value = formatarMoeda(digitosFromRaw(hidden.value));
+
+  input.addEventListener('input', () => {
+    const digitos = input.value.replace(/\D/g, '');
+    input.value = formatarMoeda(digitos);
+    hidden.value = rawFromDigitos(digitos);
   });
 }
 

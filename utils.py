@@ -5,6 +5,66 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 
+# Colunas que nunca devem aparecer na tabela de resultados nem no XLSX.
+COLUNAS_EXCLUIDAS = {
+    "CNPJ",
+    "situacao_cadastral.situacao_atual",
+    "situacao_cadastral.motivo",
+    "situacao_cadastral.data",
+}
+
+# Colunas que devem aparecer primeiro (nessa ordem), sempre que existirem
+# nos dados retornados pela API. Ajuste os prefixos aqui se a Casa dos
+# Dados usar nomes de campo diferentes.
+COLUNAS_PRIORITARIAS = [
+    "capital_social",
+    "municipio",
+    "email",
+    "telefone",
+    "cnae_principal",
+    "socios",
+]
+
+CHAVES_NOME_SOCIO = ["nome", "nome_socio", "razao_social", "nome_completo"]
+
+
+def _nome_socio(socio):
+    if isinstance(socio, dict):
+        for chave in CHAVES_NOME_SOCIO:
+            if socio.get(chave):
+                return str(socio[chave])
+        valores = [str(v) for v in socio.values() if v]
+        return " ".join(valores)
+    return str(socio) if socio is not None else ""
+
+
+def _preparar_socios(records):
+    """Reduz a lista de sócios de cada empresa a uma única string legível,
+    evitando colunas fragmentadas como socios[0].nome, socios[1].nome..."""
+    preparados = []
+    for record in records:
+        if isinstance(record, dict) and isinstance(record.get("socios"), list):
+            record = dict(record)
+            record["socios"] = " | ".join(filter(None, (_nome_socio(s) for s in record["socios"])))
+        preparados.append(record)
+    return preparados
+
+
+def _selecionar_e_ordenar_colunas(colunas):
+    """Remove as colunas excluídas e traz as prioritárias para o início."""
+    restantes = [c for c in colunas if c not in COLUNAS_EXCLUIDAS]
+
+    usadas = set()
+    ordenadas = []
+    for prioridade in COLUNAS_PRIORITARIAS:
+        for col in restantes:
+            if col not in usadas and col.lower().startswith(prioridade):
+                ordenadas.append(col)
+                usadas.add(col)
+
+    ordenadas.extend(col for col in restantes if col not in usadas)
+    return ordenadas
+
 
 def flatten_record(record, parent_key="", sep="."):
     """Achata um dict aninhado em um único nível, unindo listas simples com ' | '."""
@@ -25,7 +85,13 @@ def flatten_record(record, parent_key="", sep="."):
 
 
 def flatten_records(records):
-    """Achata uma lista de registros e retorna (colunas_ordenadas, linhas_flat)."""
+    """Achata uma lista de registros e retorna (colunas_ordenadas, linhas_flat).
+
+    Aplica _preparar_socios (uma coluna legível em vez de várias fragmentadas)
+    e _selecionar_e_ordenar_colunas (remove COLUNAS_EXCLUIDAS e prioriza
+    COLUNAS_PRIORITARIAS) antes de definir a lista final de colunas.
+    """
+    records = _preparar_socios(records)
     flat_rows = [flatten_record(r) for r in records]
     colunas = []
     vistas = set()
@@ -34,6 +100,7 @@ def flatten_records(records):
             if key not in vistas:
                 vistas.add(key)
                 colunas.append(key)
+    colunas = _selecionar_e_ordenar_colunas(colunas)
     return colunas, flat_rows
 
 
