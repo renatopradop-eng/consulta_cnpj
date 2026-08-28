@@ -1,9 +1,10 @@
+import json
 import os
 import uuid
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request, send_file, session
+from flask import Flask, Response, jsonify, render_template, request, send_file, session
 
 load_dotenv()
 
@@ -224,6 +225,19 @@ def exportar():
         download_name="empresas_casadosdados.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+@app.route("/debug/bruto", methods=["GET"])
+def debug_bruto():
+    """Mostra o JSON bruto da 1ª empresa carregada, para conferir os nomes
+    reais de campo que a API está devolvendo (útil ao ajustar utils.py)."""
+    sid = _session_id()
+    estado = RESULTS_BY_SESSION.get(sid)
+    if not estado or not estado.get("empresas"):
+        return Response("Nenhum resultado carregado. Faça uma busca primeiro.", mimetype="text/plain")
+
+    texto = json.dumps(estado["empresas"][0], indent=2, ensure_ascii=False, default=str)
+    return Response(texto, mimetype="text/plain; charset=utf-8")
 
 
 @app.route("/limpar", methods=["POST"])

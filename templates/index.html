@@ -184,6 +184,7 @@
         <h2>Resultados ({{ estado.empresas|length }} carregado(s){% if estado.total %} de ~{{ estado.total }}{% endif %})</h2>
         <div class="acoes-resultado">
           <a class="botao" href="{{ url_for('exportar') }}">Exportar para XLS</a>
+          <a class="botao secundario" href="{{ url_for('debug_bruto') }}" target="_blank">Ver dados brutos</a>
           <form method="post" action="{{ url_for('limpar') }}" style="display:inline">
             <button type="submit" class="botao secundario">Limpar resultados</button>
           </form>
