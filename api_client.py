@@ -59,7 +59,10 @@ def build_payload(filtros: dict) -> dict:
     add_list("codigo_atividade_principal")
     add_list("codigo_atividade_secundaria")
     add_list("codigo_natureza_juridica")
-    add_list("situacao_cadastral")
+
+    situacao_cadastral = [v for v in (filtros.get("situacao_cadastral") or []) if v]
+    if situacao_cadastral:
+        payload["situacao_cadastral"] = situacao_cadastral
 
     if filtros.get("incluir_atividade_secundaria"):
         payload["incluir_atividade_secundaria"] = True

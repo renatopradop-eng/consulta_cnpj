@@ -18,7 +18,7 @@ RESULTS_BY_SESSION = {}
 FORM_FIELDS = [
     "texto", "cnpj", "cnpj_raiz", "uf", "municipio", "bairro", "cep", "ddd",
     "codigo_atividade_principal", "codigo_atividade_secundaria", "codigo_natureza_juridica",
-    "situacao_cadastral", "matriz_filial", "capital_social_de", "capital_social_ate",
+    "matriz_filial", "capital_social_de", "capital_social_ate",
     "data_abertura_de", "data_abertura_ate",
 ]
 FORM_CHECKBOXES = [
@@ -35,6 +35,7 @@ def _session_id():
 def _read_filtros(form):
     filtros = {campo: form.get(campo, "") for campo in FORM_FIELDS}
     filtros["campos_busca"] = form.getlist("campos_busca")
+    filtros["situacao_cadastral"] = form.getlist("situacao_cadastral")
     for campo in FORM_CHECKBOXES:
         filtros[campo] = form.get(campo) == "on"
     return filtros

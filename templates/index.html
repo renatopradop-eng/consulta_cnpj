@@ -71,9 +71,16 @@
       <label>Natureza jurídica (códigos separados por vírgula)
         <input type="text" name="codigo_natureza_juridica" value="{{ filtros.codigo_natureza_juridica or '' }}">
       </label>
-      <label>Situação cadastral (ex: ATIVA)
-        <input type="text" name="situacao_cadastral" value="{{ filtros.situacao_cadastral or '' }}">
-      </label>
+      <div class="campo-situacao">
+        <span class="rotulo-grupo">Situação Cadastral</span>
+        <div class="checkboxes-linha">
+          <label><input type="checkbox" name="situacao_cadastral" value="ATIVA" {% if 'ATIVA' in filtros.get('situacao_cadastral', []) %}checked{% endif %}> Ativa</label>
+          <label><input type="checkbox" name="situacao_cadastral" value="BAIXADA" {% if 'BAIXADA' in filtros.get('situacao_cadastral', []) %}checked{% endif %}> Baixada</label>
+          <label><input type="checkbox" name="situacao_cadastral" value="INAPTA" {% if 'INAPTA' in filtros.get('situacao_cadastral', []) %}checked{% endif %}> Inapta</label>
+          <label><input type="checkbox" name="situacao_cadastral" value="NULA" {% if 'NULA' in filtros.get('situacao_cadastral', []) %}checked{% endif %}> Nula</label>
+          <label><input type="checkbox" name="situacao_cadastral" value="SUSPENSA" {% if 'SUSPENSA' in filtros.get('situacao_cadastral', []) %}checked{% endif %}> Suspensa</label>
+        </div>
+      </div>
       <label>Matriz ou filial
         <select name="matriz_filial">
           <option value="" {% if not filtros.matriz_filial %}selected{% endif %}>Ambos</option>
