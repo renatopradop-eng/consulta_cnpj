@@ -63,13 +63,28 @@ O endpoint `/api/municipios` do backend consulta a API pública do IBGE
 durante a execução do servidor — não precisa de chave nem configuração
 extra, mas exige que a máquina que roda o Flask tenha acesso à internet.
 
+## Sobre `tipo_resultado=completo`
+
+Por padrão a API da Casa dos Dados responde no modo "simples" (só CNPJ,
+razão social, nome fantasia e situação cadastral) a menos que a chamada
+peça explicitamente o modo completo. O app já envia
+`?tipo_resultado=completo` em toda busca (em `api_client.py`, função
+`search()`) para trazer também capital social, endereço, quadro
+societário, e-mail, telefone e CNAE. Se algum desses campos ainda não
+aparecer nos seus resultados, confirme na documentação atual se o nome ou
+a forma de pedir o modo completo mudou.
+
 ## Se a API mudar nomes de campos
 
 O mapeamento entre os filtros do formulário e o payload real enviado à API
-está isolado na função `build_payload()` em `api_client.py`. A extração da
-lista de empresas da resposta (`_extract_list`) tenta várias chaves comuns
-(`resultados`, `data`, `empresas`, etc.) — ajuste essa lista se a Casa dos
-Dados usar outro nome no envelope da resposta.
+está isolado na função `build_payload()` em `api_client.py` — já ajustado
+conforme o schema oficial (`capital_social` como `{minimo, maximo}`,
+`data_abertura` como `{inicio, fim}`, `mei.optante`/`mei.excluir_optante`,
+`mais_filtros.com_email`/`mais_filtros.com_telefone`, `uf`/`municipio`/
+`bairro` normalizados para minúsculo sem acento). A extração da lista de
+empresas da resposta (`_extract_list`) tenta várias chaves comuns
+(`cnpjs`, `resultados`, `data`, `empresas`, etc.) — ajuste essa lista se a
+Casa dos Dados usar outro nome no envelope da resposta.
 
 A exportação para XLSX (`utils.py`) é genérica: ela "achata" automaticamente
 qualquer estrutura JSON aninhada que a API devolver (ex: `endereco.uf`,
@@ -78,11 +93,14 @@ sem precisar mexer no código. Duas exceções, ambas em `utils.py`:
 
 - `COLUNAS_EXCLUIDAS` — colunas que nunca aparecem na tabela nem no XLSX
   (atualmente `CNPJ` e os campos de `situacao_cadastral`).
-- `COLUNAS_PRIORITARIAS` — prefixos de coluna que são trazidos para o
-  início da tabela, nessa ordem (capital social, município, e-mail,
-  telefone, CNAE principal, sócios). A lista de sócios também é
-  simplificada para uma única coluna com os nomes separados por " | ",
-  em vez de colunas fragmentadas por índice.
+- `COLUNAS_PRIORITARIAS` — candidatos de nome/prefixo de coluna que são
+  trazidos para o início da tabela, nessa ordem (capital social,
+  município, e-mail, telefone, CNAE principal, quadro societário). O
+  casamento considera qualquer segmento do caminho da coluna, então
+  cobre tanto `municipio` quanto `endereco.municipio`, por exemplo. O
+  quadro societário (`quadro_societario`, ou `socios` em respostas mais
+  antigas) também é simplificado para uma única coluna com os nomes
+  separados por " | ", em vez de colunas fragmentadas por índice.
 
 Ajuste essas duas constantes se os nomes de campo da API mudarem ou se você
 quiser exibir/ocultar outras colunas.

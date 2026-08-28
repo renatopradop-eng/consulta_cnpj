@@ -14,18 +14,21 @@ COLUNAS_EXCLUIDAS = {
 }
 
 # Colunas que devem aparecer primeiro (nessa ordem), sempre que existirem
-# nos dados retornados pela API. Ajuste os prefixos aqui se a Casa dos
-# Dados usar nomes de campo diferentes.
+# nos dados retornados pela API. Cada item é uma lista de nomes/prefixos
+# candidatos — o primeiro que bater com algum segmento do caminho da coluna
+# (ex: "endereco.municipio" bate com "municipio") é usado. Ajuste aqui se a
+# Casa dos Dados usar nomes de campo diferentes.
 COLUNAS_PRIORITARIAS = [
-    "capital_social",
-    "municipio",
-    "email",
-    "telefone",
-    "cnae_principal",
-    "socios",
+    ["capital_social"],
+    ["municipio"],
+    ["email"],
+    ["telefone"],
+    ["cnae_principal", "atividade_principal"],
+    ["quadro_societario", "socios"],
 ]
 
 CHAVES_NOME_SOCIO = ["nome", "nome_socio", "razao_social", "nome_completo"]
+CHAVES_SOCIOS_POSSIVEIS = ["quadro_societario", "socios"]
 
 
 def _nome_socio(socio):
@@ -39,15 +42,29 @@ def _nome_socio(socio):
 
 
 def _preparar_socios(records):
-    """Reduz a lista de sócios de cada empresa a uma única string legível,
-    evitando colunas fragmentadas como socios[0].nome, socios[1].nome..."""
+    """Reduz a lista de sócios (campo quadro_societario, ou socios em versões
+    antigas da API) a uma única string legível por empresa, evitando colunas
+    fragmentadas como quadro_societario[0].nome, quadro_societario[1].nome..."""
     preparados = []
     for record in records:
-        if isinstance(record, dict) and isinstance(record.get("socios"), list):
-            record = dict(record)
-            record["socios"] = " | ".join(filter(None, (_nome_socio(s) for s in record["socios"])))
+        if not isinstance(record, dict):
+            preparados.append(record)
+            continue
+        record = dict(record)
+        for chave in CHAVES_SOCIOS_POSSIVEIS:
+            if isinstance(record.get(chave), list):
+                record[chave] = " | ".join(filter(None, (_nome_socio(s) for s in record[chave])))
         preparados.append(record)
     return preparados
+
+
+def _segmentos(coluna):
+    return coluna.lower().replace("[", ".").replace("]", "").split(".")
+
+
+def _bate_com_prioridade(coluna, candidatos):
+    segmentos = _segmentos(coluna)
+    return any(seg.startswith(candidato) for seg in segmentos for candidato in candidatos)
 
 
 def _selecionar_e_ordenar_colunas(colunas):
@@ -56,9 +73,9 @@ def _selecionar_e_ordenar_colunas(colunas):
 
     usadas = set()
     ordenadas = []
-    for prioridade in COLUNAS_PRIORITARIAS:
+    for candidatos in COLUNAS_PRIORITARIAS:
         for col in restantes:
-            if col not in usadas and col.lower().startswith(prioridade):
+            if col not in usadas and _bate_com_prioridade(col, candidatos):
                 ordenadas.append(col)
                 usadas.add(col)
 

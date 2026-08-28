@@ -5,6 +5,7 @@ Se a Casa dos Dados alterar nomes de campos do payload, ajuste apenas
 a função `build_payload` abaixo — o resto do sistema não precisa mudar.
 """
 import os
+import unicodedata
 
 import requests
 
@@ -13,6 +14,10 @@ API_URL = os.environ.get(
     "https://api.casadosdados.com.br/v5/public/cnpj/pesquisa",
 )
 API_KEY = os.environ.get("CASADOSDADOS_API_KEY", "")
+
+# Quantos registros pedir por chamada (máximo permitido pela API). Pedir o
+# máximo de cada vez reduz o número de chamadas necessárias para paginar.
+LIMITE_POR_CHAMADA = 1000
 
 # Chaves onde a lista de empresas costuma vir dentro da resposta da API.
 RESULT_LIST_KEYS = ["resultados", "resultado", "data", "empresas", "cnpjs", "results", "items"]
@@ -26,6 +31,17 @@ class CasaDosDadosError(Exception):
         self.raw_response = raw_response
 
 
+def _sem_acentos(texto):
+    nfkd = unicodedata.normalize("NFD", texto)
+    return "".join(ch for ch in nfkd if not unicodedata.combining(ch))
+
+
+def _normalizar_localidade(valor):
+    """A API espera uf/município/bairro em minúsculo e sem acento
+    (ex: "sao paulo", não "São Paulo") — ver exemplos da documentação."""
+    return _sem_acentos(valor).lower().strip()
+
+
 def build_payload(filtros: dict) -> dict:
     """Converte os filtros do formulário no payload esperado pela API.
 
@@ -36,7 +52,7 @@ def build_payload(filtros: dict) -> dict:
 
     texto = (filtros.get("texto") or "").strip()
     if texto:
-        busca_textual = {"texto": texto}
+        busca_textual = {"texto": [texto]}
         campos_busca = filtros.get("campos_busca") or []
         if "razao_social" in campos_busca:
             busca_textual["razao_social"] = True
@@ -46,19 +62,24 @@ def build_payload(filtros: dict) -> dict:
             busca_textual["nome_socio"] = True
         payload["busca_textual"] = busca_textual
 
-    def add_list(field, payload_key=None):
+    def add_list(field, payload_key=None, normalizar=None):
         raw = (filtros.get(field) or "").strip()
         if raw:
-            payload[payload_key or field] = [v.strip() for v in raw.split(",") if v.strip()]
+            valores = [v.strip() for v in raw.split(",") if v.strip()]
+            if normalizar:
+                valores = [normalizar(v) for v in valores]
+            payload[payload_key or field] = valores
 
-    def add_multi(field):
+    def add_multi(field, normalizar=None):
         valores = [v for v in (filtros.get(field) or []) if v]
+        if normalizar:
+            valores = [normalizar(v) for v in valores]
         if valores:
             payload[field] = valores
 
-    add_multi("uf")
-    add_multi("municipio")
-    add_list("bairro")
+    add_multi("uf", normalizar=_normalizar_localidade)
+    add_multi("municipio", normalizar=_normalizar_localidade)
+    add_list("bairro", normalizar=_normalizar_localidade)
     add_list("cep")
     add_list("ddd")
     add_list("codigo_atividade_principal")
@@ -76,39 +97,49 @@ def build_payload(filtros: dict) -> dict:
 
     cnpj = (filtros.get("cnpj") or "").strip()
     if cnpj:
-        payload["cnpj"] = "".join(ch for ch in cnpj if ch.isdigit())
+        payload["cnpj"] = ["".join(ch for ch in cnpj if ch.isdigit())]
 
     cnpj_raiz = (filtros.get("cnpj_raiz") or "").strip()
     if cnpj_raiz:
-        payload["cnpj_raiz"] = "".join(ch for ch in cnpj_raiz if ch.isdigit())
+        payload["cnpj_raiz"] = ["".join(ch for ch in cnpj_raiz if ch.isdigit())]
 
     capital_de = (filtros.get("capital_social_de") or "").strip()
     capital_ate = (filtros.get("capital_social_ate") or "").strip()
     if capital_de or capital_ate:
-        payload["range_query"] = payload.get("range_query", {})
-        payload["range_query"]["capital_social"] = {
-            k: v for k, v in {"de": capital_de, "ate": capital_ate}.items() if v
-        }
+        capital_social = {}
+        if capital_de:
+            capital_social["minimo"] = int(float(capital_de))
+        if capital_ate:
+            capital_social["maximo"] = int(float(capital_ate))
+        payload["capital_social"] = capital_social
 
     data_de = (filtros.get("data_abertura_de") or "").strip()
     data_ate = (filtros.get("data_abertura_ate") or "").strip()
     if data_de or data_ate:
-        payload["range_query"] = payload.get("range_query", {})
-        payload["range_query"]["data_abertura"] = {
-            k: v for k, v in {"de": data_de, "ate": data_ate}.items() if v
-        }
+        data_abertura = {}
+        if data_de:
+            data_abertura["inicio"] = data_de
+        if data_ate:
+            data_abertura["fim"] = data_ate
+        payload["data_abertura"] = data_abertura
 
-    extras = {}
+    mei = {}
     if filtros.get("somente_mei"):
-        extras["somente_mei"] = True
+        mei["optante"] = True
     if filtros.get("excluir_mei"):
-        extras["excluir_mei"] = True
+        mei["excluir_optante"] = True
+    if mei:
+        payload["mei"] = mei
+
+    mais_filtros = {}
     if filtros.get("com_email"):
-        extras["com_email"] = True
+        mais_filtros["com_email"] = True
     if filtros.get("com_telefone"):
-        extras["com_telefone"] = True
-    if extras:
-        payload["extras"] = extras
+        mais_filtros["com_telefone"] = True
+    if mais_filtros:
+        payload["mais_filtros"] = mais_filtros
+
+    payload["limite"] = LIMITE_POR_CHAMADA
 
     pagina = filtros.get("pagina")
     if pagina:
@@ -150,6 +181,7 @@ def search(filtros: dict, pagina: int = 1, timeout: int = 30):
     try:
         resp = requests.post(
             API_URL,
+            params={"tipo_resultado": "completo"},
             json=payload,
             headers={"api-key": API_KEY, "Content-Type": "application/json"},
             timeout=timeout,
