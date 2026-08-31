@@ -13,10 +13,10 @@ COLUNAS_EXCLUIDAS = {
     "situacao_cadastral.data",
 }
 
-# Colunas que devem aparecer primeiro (nessa ordem), sempre que existirem
-# nos dados retornados pela API. Cada item é uma lista de nomes/prefixos
-# candidatos — o primeiro que bater com algum segmento do caminho da coluna
-# (ex: "endereco.municipio" bate com "municipio") é usado. Ajuste aqui se a
+# Únicas colunas exibidas na tabela de resultados e no XLSX, nessa ordem.
+# Cada item é uma lista de nomes/prefixos candidatos — o primeiro que bater
+# com algum segmento do caminho da coluna (ex: "endereco.municipio" bate com
+# "municipio") é usado. Ajuste aqui se quiser exibir mais colunas ou se a
 # Casa dos Dados usar nomes de campo diferentes.
 COLUNAS_PRIORITARIAS = [
     ["capital_social"],
@@ -68,7 +68,8 @@ def _bate_com_prioridade(coluna, candidatos):
 
 
 def _selecionar_e_ordenar_colunas(colunas):
-    """Remove as colunas excluídas e traz as prioritárias para o início."""
+    """Mantém apenas as colunas de COLUNAS_PRIORITARIAS, na ordem definida ali
+    (as demais, incluindo COLUNAS_EXCLUIDAS, não aparecem na tabela/XLSX)."""
     restantes = [c for c in colunas if c not in COLUNAS_EXCLUIDAS]
 
     usadas = set()
@@ -79,7 +80,6 @@ def _selecionar_e_ordenar_colunas(colunas):
                 ordenadas.append(col)
                 usadas.add(col)
 
-    ordenadas.extend(col for col in restantes if col not in usadas)
     return ordenadas
 
 

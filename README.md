@@ -97,24 +97,22 @@ empresas da resposta (`_extract_list`) tenta várias chaves comuns
 (`cnpjs`, `resultados`, `data`, `empresas`, etc.) — ajuste essa lista se a
 Casa dos Dados usar outro nome no envelope da resposta.
 
-A exportação para XLSX (`utils.py`) é genérica: ela "achata" automaticamente
-qualquer estrutura JSON aninhada que a API devolver (ex: `endereco.uf`,
-`atividade_principal.descricao`), então novos campos aparecem na planilha
-sem precisar mexer no código. Duas exceções, ambas em `utils.py`:
+A tabela de resultados e o XLSX exibem **apenas** as colunas listadas em
+`COLUNAS_PRIORITARIAS` (em `utils.py`), nessa ordem: capital social,
+município, e-mail, telefone, CNAE principal e quadro societário — todo o
+resto que a API devolver (razão social, CNPJ, endereço completo, etc.)
+fica fora da tabela e do XLSX, mesmo estando disponível na busca. Cada
+item da lista é um conjunto de nomes/prefixos candidatos — o casamento
+considera qualquer segmento do caminho da coluna, então cobre tanto
+`municipio` quanto `endereco.municipio`, por exemplo. `COLUNAS_EXCLUIDAS`
+bloqueia adicionalmente `CNPJ` e os campos de `situacao_cadastral`, caso
+algum dia entrem sem querer nessa lista. O quadro societário
+(`quadro_societario`, ou `socios` em respostas mais antigas) é
+simplificado para uma única coluna com os nomes separados por " | ", em
+vez de colunas fragmentadas por índice.
 
-- `COLUNAS_EXCLUIDAS` — colunas que nunca aparecem na tabela nem no XLSX
-  (atualmente `CNPJ` e os campos de `situacao_cadastral`).
-- `COLUNAS_PRIORITARIAS` — candidatos de nome/prefixo de coluna que são
-  trazidos para o início da tabela, nessa ordem (capital social,
-  município, e-mail, telefone, CNAE principal, quadro societário). O
-  casamento considera qualquer segmento do caminho da coluna, então
-  cobre tanto `municipio` quanto `endereco.municipio`, por exemplo. O
-  quadro societário (`quadro_societario`, ou `socios` em respostas mais
-  antigas) também é simplificado para uma única coluna com os nomes
-  separados por " | ", em vez de colunas fragmentadas por índice.
-
-Ajuste essas duas constantes se os nomes de campo da API mudarem ou se você
-quiser exibir/ocultar outras colunas.
+Para exibir mais colunas, adicione uma nova lista de candidatos a
+`COLUNAS_PRIORITARIAS` em `utils.py`.
 
 Consulte a documentação oficial e atualizada em
 https://docs.casadosdados.com.br/ para confirmar nomes de parâmetros antes
