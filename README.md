@@ -50,7 +50,7 @@ Acesse http://127.0.0.1:5000 no navegador.
 Cada chamada à API consome créditos da sua conta. Para não gastar créditos
 sem controle (por exemplo, ao selecionar "Exibir tudo" numa busca com
 milhares de resultados), o app carrega automaticamente no máximo
-`MAX_REGISTROS_CARREGADOS` registros (1000 por padrão, definido no topo de
+`MAX_REGISTROS_CARREGADOS` registros (10000 por padrão, definido no topo de
 `app.py`). Ao atingir esse teto, aparece um aviso na tela pedindo para
 refinar os filtros ou exportar o que já foi carregado. Ajuste essa
 constante se quiser um limite maior ou menor.

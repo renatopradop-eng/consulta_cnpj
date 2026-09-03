@@ -47,7 +47,7 @@ PAGE_SIZE_PADRAO = "20"
 
 # Teto de segurança: quantos registros no máximo o app busca automaticamente
 # na API ao navegar pela paginação, para não estourar créditos numa única ação.
-MAX_REGISTROS_CARREGADOS = 1000
+MAX_REGISTROS_CARREGADOS = 10000
 
 
 def _session_id():
