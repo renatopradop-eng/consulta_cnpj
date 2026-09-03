@@ -9,7 +9,7 @@ from flask import Flask, Response, jsonify, render_template, request, send_file,
 load_dotenv()
 
 import api_client
-from utils import build_xlsx, flatten_records
+from utils import build_xlsx, flatten_records, rotulo_coluna
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-troque-me")
@@ -154,6 +154,9 @@ def _paginar_estado(estado, pagina_raw="1", tamanho_raw=None):
 
 
 def _render(filtros, estado, erro, **extra):
+    if estado and estado.get("colunas"):
+        estado = dict(estado)
+        estado["rotulos"] = {col: rotulo_coluna(col) for col in estado["colunas"]}
     return render_template("index.html", filtros=filtros, estado=estado, erro=erro, ufs=UFS, **extra)
 
 

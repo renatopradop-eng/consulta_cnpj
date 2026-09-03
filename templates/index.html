@@ -2,7 +2,11 @@
 <html lang="pt-br">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Consulta CNPJ — Casa dos Dados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -25,8 +29,11 @@
   {% endmacro %}
 
   <header>
-    <h1>Consulta de CNPJ / Geração de Leads</h1>
-    <p class="subtitulo">Pesquisa via API da Casa dos Dados</p>
+    <span class="logo-badge">🔎</span>
+    <div>
+      <h1>Consulta de CNPJ / Geração de Leads</h1>
+      <p class="subtitulo">Pesquisa via API da Casa dos Dados</p>
+    </div>
   </header>
 
   {% if erro %}
@@ -220,7 +227,7 @@
         <table>
           <thead>
             <tr>
-              {% for col in estado.colunas %}<th>{{ col }}</th>{% endfor %}
+              {% for col in estado.colunas %}<th>{{ estado.rotulos.get(col, col) }}</th>{% endfor %}
             </tr>
           </thead>
           <tbody>

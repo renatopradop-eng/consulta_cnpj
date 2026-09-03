@@ -34,6 +34,17 @@ COLUNAS_PRIORITARIAS = [
     ["cnae_principal", "atividade_principal"],
 ]
 
+# Rótulo amigável exibido na tabela/XLSX para cada grupo de COLUNAS_PRIORITARIAS
+# (mesma posição/ordem). Os dados continuam indexados pelo nome técnico da
+# coluna — isso só troca o texto do cabeçalho.
+ROTULOS_PRIORITARIOS = [
+    "Capital Social",
+    "Município",
+    "E-mail",
+    "Telefone",
+    "CNAE Principal",
+]
+
 # Campos que vêm como lista de objetos e devem virar uma única string legível
 # por empresa (evita colunas fragmentadas por índice, tipo campo[0].chave,
 # campo[1].chave...). Cada valor é a ordem de preferência de sub-chave para
@@ -112,6 +123,16 @@ def _selecionar_e_ordenar_colunas(colunas):
     return ordenadas
 
 
+def rotulo_coluna(coluna):
+    """Rótulo amigável para exibir no cabeçalho da coluna (tabela/XLSX).
+    Os dados continuam indexados pelo nome técnico — isso só troca o texto."""
+    segmentos = _segmentos(coluna)
+    for candidatos, rotulo in zip(COLUNAS_PRIORITARIAS, ROTULOS_PRIORITARIOS):
+        if any(seg.startswith(c) for seg in segmentos for c in candidatos):
+            return rotulo
+    return coluna
+
+
 def flatten_record(record, parent_key="", sep="."):
     """Achata um dict aninhado em um único nível, unindo listas simples com ' | '."""
     items = {}
@@ -162,15 +183,16 @@ def build_xlsx(records, sheet_name="Empresas"):
     ws = wb.active
     ws.title = sheet_name[:31] or "Empresas"
 
-    ws.append(colunas)
+    rotulos = [rotulo_coluna(col) for col in colunas]
+    ws.append(rotulos)
     for cell in ws[1]:
         cell.font = Font(bold=True)
 
     for row in flat_rows:
         ws.append([row.get(col, "") for col in colunas])
 
-    for idx, col in enumerate(colunas, start=1):
-        max_len = max([len(col)] + [len(str(row.get(col, ""))) for row in flat_rows]) if flat_rows else len(col)
+    for idx, (col, rotulo) in enumerate(zip(colunas, rotulos), start=1):
+        max_len = max([len(rotulo)] + [len(str(row.get(col, ""))) for row in flat_rows]) if flat_rows else len(rotulo)
         ws.column_dimensions[get_column_letter(idx)].width = min(max(max_len + 2, 10), 60)
 
     ws.freeze_panes = "A2"
