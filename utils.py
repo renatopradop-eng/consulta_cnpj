@@ -22,40 +22,59 @@ COLUNAS_PRIORITARIAS = [
     ["capital_social"],
     ["municipio"],
     ["email"],
-    ["telefone"],
+    ["telefone", "ddd", "celular", "whatsapp"],
     ["cnae_principal", "atividade_principal"],
-    ["quadro_societario", "socios"],
 ]
 
-CHAVES_NOME_SOCIO = ["nome", "nome_socio", "razao_social", "nome_completo"]
-CHAVES_SOCIOS_POSSIVEIS = ["quadro_societario", "socios"]
+# Campos que vêm como lista de objetos e devem virar uma única string legível
+# por empresa (evita colunas fragmentadas por índice, tipo campo[0].chave,
+# campo[1].chave...). Cada valor é a ordem de preferência de sub-chave para
+# resumir cada item da lista.
+CAMPOS_LISTA_PARA_RESUMIR = {
+    "quadro_societario": ["nome", "nome_socio", "razao_social", "nome_completo"],
+    "socios": ["nome", "nome_socio", "razao_social", "nome_completo"],
+    "telefones": ["numero", "telefone", "numero_telefone"],
+    "emails": ["email", "endereco_email"],
+}
 
 
-def _nome_socio(socio):
-    if isinstance(socio, dict):
-        for chave in CHAVES_NOME_SOCIO:
-            if socio.get(chave):
-                return str(socio[chave])
-        valores = [str(v) for v in socio.values() if v]
+def _resumir_item_lista(item, chaves_preferidas):
+    if isinstance(item, dict):
+        for chave in chaves_preferidas:
+            if item.get(chave):
+                return str(item[chave])
+        valores = [str(v) for v in item.values() if v]
         return " ".join(valores)
-    return str(socio) if socio is not None else ""
+    return str(item) if item is not None else ""
 
 
-def _preparar_socios(records):
-    """Reduz a lista de sócios (campo quadro_societario, ou socios em versões
-    antigas da API) a uma única string legível por empresa, evitando colunas
-    fragmentadas como quadro_societario[0].nome, quadro_societario[1].nome..."""
+def _resumir_listas_de_objetos(records):
+    """Reduz campos que vêm como lista de objetos (sócios, telefones, e-mails)
+    a uma única string legível por empresa. Se o campo já vier como valor
+    simples ou objeto único, não faz nada (fica para o flatten_record normal)."""
     preparados = []
     for record in records:
         if not isinstance(record, dict):
             preparados.append(record)
             continue
         record = dict(record)
-        for chave in CHAVES_SOCIOS_POSSIVEIS:
+        for chave, prioridades in CAMPOS_LISTA_PARA_RESUMIR.items():
             if isinstance(record.get(chave), list):
-                record[chave] = " | ".join(filter(None, (_nome_socio(s) for s in record[chave])))
+                record[chave] = " | ".join(
+                    filter(None, (_resumir_item_lista(item, prioridades) for item in record[chave]))
+                )
         preparados.append(record)
     return preparados
+
+
+def _formatar_moeda_brl(valor):
+    """Formata um número como moeda brasileira (R$ 1.234,56)."""
+    try:
+        numero = float(valor)
+    except (TypeError, ValueError):
+        return valor
+    texto = f"{numero:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+    return f"R$ {texto}"
 
 
 def _segmentos(coluna):
@@ -104,12 +123,16 @@ def flatten_record(record, parent_key="", sep="."):
 def flatten_records(records):
     """Achata uma lista de registros e retorna (colunas_ordenadas, linhas_flat).
 
-    Aplica _preparar_socios (uma coluna legível em vez de várias fragmentadas)
-    e _selecionar_e_ordenar_colunas (remove COLUNAS_EXCLUIDAS e prioriza
-    COLUNAS_PRIORITARIAS) antes de definir a lista final de colunas.
+    Aplica _resumir_listas_de_objetos (uma coluna legível em vez de várias
+    fragmentadas), formata capital_social como moeda e aplica
+    _selecionar_e_ordenar_colunas (mantém só COLUNAS_PRIORITARIAS, remove
+    COLUNAS_EXCLUIDAS) antes de definir a lista final de colunas.
     """
-    records = _preparar_socios(records)
+    records = _resumir_listas_de_objetos(records)
     flat_rows = [flatten_record(r) for r in records]
+    for row in flat_rows:
+        if "capital_social" in row:
+            row["capital_social"] = _formatar_moeda_brl(row["capital_social"])
     colunas = []
     vistas = set()
     for row in flat_rows:

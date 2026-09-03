@@ -99,17 +99,26 @@ Casa dos Dados usar outro nome no envelope da resposta.
 
 A tabela de resultados e o XLSX exibem **apenas** as colunas listadas em
 `COLUNAS_PRIORITARIAS` (em `utils.py`), nessa ordem: capital social,
-município, e-mail, telefone, CNAE principal e quadro societário — todo o
-resto que a API devolver (razão social, CNPJ, endereço completo, etc.)
-fica fora da tabela e do XLSX, mesmo estando disponível na busca. Cada
-item da lista é um conjunto de nomes/prefixos candidatos — o casamento
-considera qualquer segmento do caminho da coluna, então cobre tanto
-`municipio` quanto `endereco.municipio`, por exemplo. `COLUNAS_EXCLUIDAS`
-bloqueia adicionalmente `CNPJ` e os campos de `situacao_cadastral`, caso
-algum dia entrem sem querer nessa lista. O quadro societário
-(`quadro_societario`, ou `socios` em respostas mais antigas) é
-simplificado para uma única coluna com os nomes separados por " | ", em
-vez de colunas fragmentadas por índice.
+município, e-mail, telefone (e variantes como DDD/celular/WhatsApp) e CNAE
+principal — todo o resto que a API devolver (razão social, CNPJ, quadro
+societário, endereço completo, etc.) fica fora da tabela e do XLSX, mesmo
+estando disponível na busca. Cada item da lista é um conjunto de
+nomes/prefixos candidatos — o casamento considera qualquer segmento do
+caminho da coluna, então cobre tanto `municipio` quanto
+`endereco.municipio`, por exemplo. `COLUNAS_EXCLUIDAS` bloqueia
+adicionalmente `CNPJ` e os campos de `situacao_cadastral`, caso algum dia
+entrem sem querer nessa lista.
+
+Dois tratamentos especiais em `utils.py`:
+
+- `capital_social` é formatado como moeda brasileira (`R$ 150.000,00`)
+  pela função `_formatar_moeda_brl`.
+- Campos listados em `CAMPOS_LISTA_PARA_RESUMIR` (sócios/quadro
+  societário, telefones, e-mails) que vierem como **lista de objetos** são
+  reduzidos a uma única string legível (nomes/números separados por
+  " | "), em vez de colunas fragmentadas por índice
+  (`telefones[0].numero`, `telefones[1].numero`...). Se o campo já vier
+  como valor simples ou objeto único, isso não tem efeito.
 
 Para exibir mais colunas, adicione uma nova lista de candidatos a
 `COLUNAS_PRIORITARIAS` em `utils.py`.
