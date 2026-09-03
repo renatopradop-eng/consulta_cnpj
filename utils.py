@@ -6,11 +6,19 @@ from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 
 # Colunas que nunca devem aparecer na tabela de resultados nem no XLSX.
+# As entradas com índice (ex: "contato_email[1].email") são uma rede de
+# segurança: normalmente nem chegam a existir, porque
+# _resumir_listas_de_objetos já reduz contato_email/contato_telefonico a
+# uma única coluna antes do achatamento.
 COLUNAS_EXCLUIDAS = {
     "CNPJ",
     "situacao_cadastral.situacao_atual",
     "situacao_cadastral.motivo",
     "situacao_cadastral.data",
+    "atividade_principal.codigo",
+    "contato_email[1].email",
+    "contato_telefonico[0].ddd",
+    "contato_telefonico[1].ddd",
 }
 
 # Únicas colunas exibidas na tabela de resultados e no XLSX, nessa ordem.
@@ -21,8 +29,8 @@ COLUNAS_EXCLUIDAS = {
 COLUNAS_PRIORITARIAS = [
     ["capital_social"],
     ["municipio"],
-    ["email"],
-    ["telefone", "ddd", "celular", "whatsapp"],
+    ["contato_email", "email"],
+    ["contato_telefonico", "telefone", "ddd", "celular", "whatsapp"],
     ["cnae_principal", "atividade_principal"],
 ]
 
@@ -33,6 +41,8 @@ COLUNAS_PRIORITARIAS = [
 CAMPOS_LISTA_PARA_RESUMIR = {
     "quadro_societario": ["nome", "nome_socio", "razao_social", "nome_completo"],
     "socios": ["nome", "nome_socio", "razao_social", "nome_completo"],
+    "contato_telefonico": ["completo", "numero", "telefone"],
+    "contato_email": ["email"],
     "telefones": ["numero", "telefone", "numero_telefone"],
     "emails": ["email", "endereco_email"],
 }

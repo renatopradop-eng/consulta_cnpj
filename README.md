@@ -99,14 +99,15 @@ Casa dos Dados usar outro nome no envelope da resposta.
 
 A tabela de resultados e o XLSX exibem **apenas** as colunas listadas em
 `COLUNAS_PRIORITARIAS` (em `utils.py`), nessa ordem: capital social,
-município, e-mail, telefone (e variantes como DDD/celular/WhatsApp) e CNAE
-principal — todo o resto que a API devolver (razão social, CNPJ, quadro
-societário, endereço completo, etc.) fica fora da tabela e do XLSX, mesmo
-estando disponível na busca. Cada item da lista é um conjunto de
-nomes/prefixos candidatos — o casamento considera qualquer segmento do
-caminho da coluna, então cobre tanto `municipio` quanto
+município, e-mail (`contato_email`), telefone (`contato_telefonico`) e
+CNAE principal — todo o resto que a API devolver (razão social, CNPJ,
+quadro societário, código do CNAE, endereço completo, etc.) fica fora da
+tabela e do XLSX, mesmo estando disponível na busca. Cada item da lista é
+um conjunto de nomes/prefixos candidatos — o casamento considera qualquer
+segmento do caminho da coluna, então cobre tanto `municipio` quanto
 `endereco.municipio`, por exemplo. `COLUNAS_EXCLUIDAS` bloqueia
-adicionalmente `CNPJ` e os campos de `situacao_cadastral`, caso algum dia
+adicionalmente `CNPJ`, os campos de `situacao_cadastral` e
+`atividade_principal.codigo` (fica só a descrição), caso algum dia
 entrem sem querer nessa lista.
 
 Dois tratamentos especiais em `utils.py`:
@@ -114,11 +115,12 @@ Dois tratamentos especiais em `utils.py`:
 - `capital_social` é formatado como moeda brasileira (`R$ 150.000,00`)
   pela função `_formatar_moeda_brl`.
 - Campos listados em `CAMPOS_LISTA_PARA_RESUMIR` (sócios/quadro
-  societário, telefones, e-mails) que vierem como **lista de objetos** são
-  reduzidos a uma única string legível (nomes/números separados por
-  " | "), em vez de colunas fragmentadas por índice
-  (`telefones[0].numero`, `telefones[1].numero`...). Se o campo já vier
-  como valor simples ou objeto único, isso não tem efeito.
+  societário, `contato_telefonico`, `contato_email`) que vierem como
+  **lista de objetos** são reduzidos a uma única string legível (usando o
+  campo `completo` para telefone e `email` para e-mail, valores separados
+  por " | "), em vez de colunas fragmentadas por índice
+  (`contato_telefonico[0].ddd`, `contato_telefonico[1].ddd`...). Se o
+  campo já vier como valor simples ou objeto único, isso não tem efeito.
 
 Para exibir mais colunas, adicione uma nova lista de candidatos a
 `COLUNAS_PRIORITARIAS` em `utils.py`.
